@@ -1,0 +1,7 @@
+{
+  "name": "doc-mark",
+  "private": true,
+  "scripts": {
+    "build": "echo 'Static site - no build required'"
+  }
+}
