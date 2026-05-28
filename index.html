@@ -4,11 +4,1468 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <title>DocuMark - 文档转Markdown在线工具</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>DocuMark</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #141414;
+      --bg-tertiary: #1a1a1a;
+      --border-subtle: rgba(255,255,255,0.06);
+      --border-medium: rgba(255,255,255,0.08);
+      --border-strong: rgba(255,255,255,0.12);
+      --text-primary: rgba(255,255,255,0.92);
+      --text-secondary: rgba(255,255,255,0.65);
+      --text-tertiary: rgba(255,255,255,0.45);
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59,130,246,0.15);
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --shadow-soft: 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-medium: 0 4px 12px rgba(0,0,0,0.5);
+      --shadow-strong: 0 8px 24px rgba(0,0,0,0.6);
+      --transition-fast: 150ms cubic-bezier(0.4,0,0.2,1);
+      --transition-medium: 220ms cubic-bezier(0.4,0,0.2,1);
+      --transition-slow: 350ms cubic-bezier(0.4,0,0.2,1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background */
+    .background {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .background-gradient {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 80%, rgba(139,92,246,0.06) 0%, transparent 50%);
+    }
+
+    .background-noise {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    }
+
+    /* App */
+    .app {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(20px);
+      background: linear-gradient(to bottom, var(--bg-primary) 0%, rgba(10,10,10,0.8) 100%);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-sub {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+      background: var(--bg-secondary);
+    }
+
+    .header-btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+
+    .header-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+      background: linear-gradient(135deg, var(--accent-hover) 0%, var(--accent) 100%);
+    }
+
+    /* Main */
+    .main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 48px 32px 64px;
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 4px rgba(34,197,94,0.2);
+    }
+
+    .hero-title {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, rgba(255,255,255,0.7) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 580px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+
+    .feature {
+      padding: 20px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 14px;
+      transition: all var(--transition-medium);
+    }
+
+    .feature:hover {
+      border-color: var(--border-medium);
+      transform: translateY(-2px);
+      background: var(--bg-tertiary);
+    }
+
+    .feature-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(59,130,246,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .feature-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature-desc {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      line-height: 1.5;
+    }
+
+    /* Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 24px;
+    }
+
+    /* Panel */
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: var(--shadow-medium);
+    }
+
+    .panel-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-title {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-count {
+      padding: 2px 8px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+    }
+
+    .panel-body {
+      padding: 24px;
+    }
+
+    /* Dropzone */
+    .dropzone {
+      position: relative;
+      padding: 48px 24px;
+      text-align: center;
+      border: 2px dashed var(--border-medium);
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all var(--transition-medium);
+      background: var(--bg-primary);
+    }
+
+    .dropzone:hover {
+      border-color: var(--border-strong);
+      background: rgba(59,130,246,0.02);
+    }
+
+    .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(59,130,246,0.08);
+    }
+
+    .dropzone-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 20px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dropzone-icon svg {
+      width: 28px;
+      height: 28px;
+      color: var(--accent);
+    }
+
+    .dropzone-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .dropzone-subtitle {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      margin-bottom: 20px;
+    }
+
+    .dropzone-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-medium);
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      color: var(--text-primary);
+    }
+
+    .dropzone-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .dropzone-formats {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .format-tag {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    /* File List */
+    .file-list {
+      margin-top: 24px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      transition: all var(--transition-fast);
+    }
+
+    .file-item:hover {
+      border-color: var(--border-medium);
+      background: var(--bg-tertiary);
+    }
+
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: rgba(59,130,246,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: 12px;
+      color: var(--text-tertiary);
+    }
+
+    .file-remove {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+
+    .file-remove:hover {
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.3);
+      color: var(--danger);
+    }
+
+    .file-remove svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .file-empty {
+      text-align: center;
+      padding: 40px 24px;
+      color: var(--text-tertiary);
+      font-size: 14px;
+    }
+
+    /* Convert Bar */
+    .convert-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .convert-info {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .convert-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+
+    .convert-btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+    }
+
+    .convert-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .convert-btn-spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+    }
+
+    .preview-toolbar {
+      padding: 16px 24px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .preview-tab {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-tertiary);
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .preview-tab:hover {
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+    }
+
+    .preview-tab.active {
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+    }
+
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preview-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-medium);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .preview-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+      background: rgba(255,255,255,0.06);
+    }
+
+    .preview-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .preview-btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .preview-btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .preview-content {
+      flex: 1;
+      overflow: auto;
+      background: #0d1117;
+    }
+
+    .preview-content pre {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 24px;
+      margin: 0;
+      color: #c9d1d9;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .preview-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-tertiary);
+      gap: 12px;
+    }
+
+    .preview-empty-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 8px;
+    }
+
+    .preview-empty-icon svg {
+      width: 28px;
+      height: 28px;
+      opacity: 0.5;
+    }
+
+    .preview-empty-text {
+      font-size: 14px;
+    }
+
+    .preview-empty-sub {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding: 16px 24px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .stat {
+      text-align: center;
+      padding: 12px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 40px 32px;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(10,10,10,0.8);
+    }
+
+    .footer-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .footer-text {
+      font-size: 13px;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-link {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-decoration: none;
+      transition: color var(--transition-fast);
+    }
+
+    .footer-link:hover {
+      color: var(--text-secondary);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      padding: 14px 18px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-medium);
+      border-radius: 12px;
+      box-shadow: var(--shadow-strong);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn var(--transition-medium);
+    }
+
+    .toast.success {
+      border-left: 3px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 3px solid var(--danger);
+    }
+
+    .toast-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast.success .toast-icon { color: var(--success); }
+    .toast.error .toast-icon { color: var(--danger); }
+
+    .toast-text {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1200px) {
+      .workspace {
+        grid-template-columns: 380px 1fr;
+      }
+      .features {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 968px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+      .preview-panel {
+        height: 500px;
+      }
+      .hero-title {
+        font-size: 42px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .header-inner {
+        padding: 16px 16px;
+      }
+      .main {
+        padding: 32px 16px 48px;
+      }
+      .hero-title {
+        font-size: 32px;
+      }
+      .hero-subtitle {
+        font-size: 16px;
+      }
+      .features {
+        grid-template-columns: 1fr;
+      }
+      .footer-inner {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+
+    /* Hidden file input */
+    #fileInput {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+  <div class="background">
+    <div class="background-gradient"></div>
+    <div class="background-noise"></div>
+  </div>
+
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo">
+          <div class="logo-mark">D</div>
+          <div>
+            <div class="logo-text">DocuMark</div>
+            <div class="logo-sub">文档转 Markdown</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="showToast('文档帮助', 'success')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            帮助
+          </button>
+          <button class="header-btn header-btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+            </svg>
+            Star
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-badge">
+          <div class="hero-badge-dot"></div>
+          纯本地处理 · 隐私安全
+        </div>
+        <h1 class="hero-title">转换文档，即刻完成</h1>
+        <p class="hero-subtitle">
+          支持 Word、PDF、Excel、PowerPoint 一键转换为 Markdown，无需上传到服务器，所有处理在浏览器中完成。
+        </p>
+      </section>
+
+      <!-- Features -->
+      <section class="features">
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">极速转换</div>
+          <div class="feature-desc">纯前端处理，无需等待上传</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔒</div>
+          <div class="feature-title">隐私安全</div>
+          <div class="feature-desc">文件不会离开你的设备</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📝</div>
+          <div class="feature-title">格式保留</div>
+          <div class="feature-desc">智能解析标题、列表、表格</div>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">📦</div>
+          <div class="feature-title">批量处理</div>
+          <div class="feature-desc">同时转换多个文档</div>
+        </div>
+      </section>
+
+      <!-- Workspace -->
+      <section class="workspace">
+        <!-- Left Panel -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              上传文件
+              <span class="panel-count" id="fileCount">0</span>
+            </div>
+            <button class="header-btn" style="padding: 6px 12px; font-size: 12px;" id="clearAllBtn" onclick="clearAllFiles()" disabled>
+              清空
+            </button>
+          </div>
+          <div class="panel-body">
+            <!-- Dropzone -->
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+              <div class="dropzone-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="dropzone-title">拖放文件到此处</div>
+              <div class="dropzone-subtitle">或点击选择文件</div>
+              <button class="dropzone-btn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                选择文件
+              </button>
+              <div class="dropzone-formats">
+                <span class="format-tag">.docx</span>
+                <span class="format-tag">.pdf</span>
+                <span class="format-tag">.xlsx</span>
+                <span class="format-tag">.pptx</span>
+              </div>
+            </div>
+
+            <!-- File List -->
+            <div class="file-list" id="fileList">
+              <div class="file-empty">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; margin-bottom: 8px;">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                  <polyline points="13 2 13 9 20 9"></polyline>
+                </svg>
+                尚未添加文件
+              </div>
+            </div>
+          </div>
+          <div class="convert-bar">
+            <div class="convert-info" id="convertInfo">选择文件以开始</div>
+            <button class="convert-btn" id="convertBtn" onclick="convertFiles()" disabled>
+              <span>开始转换</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="panel preview-panel">
+          <div class="preview-toolbar">
+            <div class="preview-tabs">
+              <button class="preview-tab active">Markdown</button>
+            </div>
+            <div class="preview-actions">
+              <button class="preview-btn" id="copyBtn" onclick="copyMarkdown()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                复制
+              </button>
+              <button class="preview-btn preview-btn-primary" id="downloadBtn" onclick="downloadMarkdown()" disabled>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                下载
+              </button>
+            </div>
+          </div>
+          <div class="preview-content" id="previewContent">
+            <div class="preview-empty">
+              <div class="preview-empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+              </div>
+              <div class="preview-empty-text">转换后的内容将显示在这里</div>
+              <div class="preview-empty-sub">上传文件并点击「开始转换」</div>
+            </div>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value" id="statChars">0</div>
+              <div class="stat-label">字符</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="statLines">0</div>
+              <div class="stat-label">行数</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="statWords">0</div>
+              <div class="stat-label">单词</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-left">
+          <div class="footer-logo">D</div>
+          <div class="footer-text">DocuMark · 文档转 Markdown 工具</div>
+        </div>
+        <div class="footer-links">
+          <a href="#" class="footer-link">隐私政策</a>
+          <a href="#" class="footer-link">使用条款</a>
+          <a href="#" class="footer-link">GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- File Input -->
+  <input type="file" id="fileInput" accept=".docx,.pdf,.xlsx,.xls,.pptx" multiple>
+
+  <!-- Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <script>
+    // PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // State
+    let selectedFiles = [];
+    let currentMarkdown = '';
+    let currentFileName = 'converted.md';
+
+    // Elements
+    const fileInput = document.getElementById('fileInput');
+    const dropzone = document.getElementById('dropzone');
+    const fileList = document.getElementById('fileList');
+    const fileCount = document.getElementById('fileCount');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const convertBtn = document.getElementById('convertBtn');
+    const convertInfo = document.getElementById('convertInfo');
+    const previewContent = document.getElementById('previewContent');
+    const copyBtn = document.getElementById('copyBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const statChars = document.getElementById('statChars');
+    const statLines = document.getElementById('statLines');
+    const statWords = document.getElementById('statWords');
+    const toastContainer = document.getElementById('toastContainer');
+
+    // Toast
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${type === 'success' 
+            ? '<polyline points="20 6 9 17 4 12"></polyline>'
+            : '<circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line>'}
+        </svg>
+        <span class="toast-text">${message}</span>
+      `;
+      toastContainer.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'toastIn var(--transition-medium) reverse';
+        setTimeout(() => toast.remove(), 200);
+      }, 3000);
+    }
+
+    // File helpers
+    function getFileIcon(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      const icons = {
+        'docx': '📝',
+        'doc': '📝',
+        'pdf': '📕',
+        'xlsx': '📊',
+        'xls': '📊',
+        'pptx': '📽️',
+        'ppt': '📽️'
+      };
+      return icons[ext] || '📄';
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    // Update UI
+    function updateUI() {
+      // Count
+      fileCount.textContent = selectedFiles.length;
+      
+      // Clear button
+      clearAllBtn.disabled = selectedFiles.length === 0;
+
+      // Convert button
+      convertBtn.disabled = selectedFiles.length === 0;
+      convertInfo.textContent = selectedFiles.length === 0 
+        ? '选择文件以开始'
+        : `${selectedFiles.length} 个文件已就绪`;
+
+      // File list
+      if (selectedFiles.length === 0) {
+        fileList.innerHTML = `
+          <div class="file-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.3; margin-bottom: 8px;">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+              <polyline points="13 2 13 9 20 9"></polyline>
+            </svg>
+            尚未添加文件
+          </div>
+        `;
+      } else {
+        fileList.innerHTML = selectedFiles.map((file, index) => `
+          <div class="file-item">
+            <div class="file-icon">${getFileIcon(file.name)}</div>
+            <div class="file-info">
+              <div class="file-name">${file.name}</div>
+              <div class="file-meta">${formatFileSize(file.size)}</div>
+            </div>
+            <button class="file-remove" onclick="removeFile(${index})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        `).join('');
+      }
+    }
+
+    function updateStats(text) {
+      const chars = text.length;
+      const lines = text ? text.split('\n').length : 0;
+      const words = text ? text.split(/\s+/).filter(w => w.length > 0).length : 0;
+      statChars.textContent = chars.toLocaleString();
+      statLines.textContent = lines.toLocaleString();
+      statWords.textContent = words.toLocaleString();
+    }
+
+    function updatePreview(text) {
+      if (!text) {
+        previewContent.innerHTML = `
+          <div class="preview-empty">
+            <div class="preview-empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+            </div>
+            <div class="preview-empty-text">转换后的内容将显示在这里</div>
+            <div class="preview-empty-sub">上传文件并点击「开始转换」</div>
+          </div>
+        `;
+      } else {
+        previewContent.innerHTML = `<pre>${escapeHtml(text)}</pre>`;
+      }
+      updateStats(text);
+      copyBtn.disabled = !text;
+      downloadBtn.disabled = !text;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // File handling
+    function handleFiles(files) {
+      const validTypes = ['.docx', '.pdf', '.xlsx', '.xls', '.pptx'];
+      let added = 0;
+      
+      Array.from(files).forEach(file => {
+        const ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (validTypes.includes(ext)) {
+          if (!selectedFiles.find(f => f.name === file.name)) {
+            selectedFiles.push(file);
+            added++;
+          }
+        }
+      });
+
+      if (added > 0) {
+        showToast(`已添加 ${added} 个文件`);
+      }
+      updateUI();
+    }
+
+    function removeFile(index) {
+      const name = selectedFiles[index].name;
+      selectedFiles.splice(index, 1);
+      showToast(`已移除 ${name}`);
+      updateUI();
+    }
+
+    function clearAllFiles() {
+      selectedFiles = [];
+      updateUI();
+      currentMarkdown = '';
+      currentFileName = 'converted.md';
+      updatePreview('');
+      showToast('已清空所有文件');
+    }
+
+    // Dropzone events
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+      e.target.value = '';
+    });
+
+    // Converters
+    async function convertDocx(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToMarkdown({ arrayBuffer });
+      return result.value;
+    }
+
+    async function convertExcel(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      let markdown = '';
+
+      workbook.SheetNames.forEach((name, i) => {
+        if (i > 0) markdown += '\n\n---\n\n';
+        markdown += `## ${name}\n\n`;
+        const sheet = workbook.Sheets[name];
+        const csv = XLSX.utils.sheet_to_csv(sheet);
+        
+        if (csv) {
+          const lines = csv.split('\n').filter(l => l);
+          if (lines.length > 0) {
+            const headers = lines[0].split(',');
+            markdown += '| ' + headers.join(' | ') + ' |\n';
+            markdown += '| ' + headers.map(() => '---').join(' | ') + ' |\n';
+            for (let j = 1; j < lines.length; j++) {
+              markdown += '| ' + lines[j].split(',').join(' | ') + ' |\n';
+            }
+          }
+        }
+      });
+
+      return markdown;
+    }
+
+    async function convertPdf(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      let text = '';
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map(item => item.str).join(' ');
+        text += pageText + '\n\n';
+      }
+
+      return text.trim();
+    }
+
+    async function convertPptx(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(arrayBuffer);
+      
+      const slideFiles = Object.keys(zip.files)
+        .filter(name => name.match(/ppt\/slides\/slide\d+\.xml$/))
+        .sort((a, b) => {
+          const numA = parseInt(a.match(/slide(\d+)\.xml$/)[1]);
+          const numB = parseInt(b.match(/slide(\d+)\.xml$/)[1]);
+          return numA - numB;
+        });
+
+      let markdown = '';
+
+      for (let i = 0; i < slideFiles.length; i++) {
+        const xml = await zip.files[slideFiles[i]].async('string');
+        const matches = xml.match(/<a:t>([^<]*)<\/a:t>/g) || [];
+        const texts = matches.map(m => m.replace(/<\/?a:t>/g, '')).filter(t => t);
+        
+        if (texts.length > 0) {
+          markdown += `## 第 ${i + 1} 页\n\n`;
+          markdown += texts.join(' ') + '\n\n';
+        }
+      }
+
+      return markdown;
+    }
+
+    async function convertFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      
+      switch (ext) {
+        case 'docx':
+          return await convertDocx(file);
+        case 'xlsx':
+        case 'xls':
+          return await convertExcel(file);
+        case 'pdf':
+          return await convertPdf(file);
+        case 'pptx':
+          return await convertPptx(file);
+        default:
+          return '';
+      }
+    }
+
+    async function convertFiles() {
+      if (selectedFiles.length === 0) return;
+
+      // UI state
+      const btnText = convertBtn.querySelector('span');
+      const btnIcon = convertBtn.querySelector('svg');
+      btnText.textContent = '转换中...';
+      btnIcon.outerHTML = '<div class="convert-btn-spinner"></div>';
+      convertBtn.disabled = true;
+
+      try {
+        let result = '';
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const md = await convertFile(file);
+          
+          if (selectedFiles.length > 1) {
+            result += `# ${file.name}\n\n`;
+          }
+          result += md;
+          
+          if (i < selectedFiles.length - 1) {
+            result += '\n\n---\n\n';
+          }
+        }
+
+        currentMarkdown = result;
+        currentFileName = selectedFiles.length === 1 
+          ? selectedFiles[0].name.replace(/\.[^/.]+$/, '') + '.md'
+          : 'converted.md';
+
+        updatePreview(currentMarkdown);
+        showToast('转换完成！', 'success');
+      } catch (error) {
+        console.error(error);
+        showToast('转换失败: ' + error.message, 'error');
+      } finally {
+        btnText.textContent = '开始转换';
+        const spinner = convertBtn.querySelector('.convert-btn-spinner');
+        if (spinner) {
+          spinner.outerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          `;
+        }
+        convertBtn.disabled = selectedFiles.length === 0;
+      }
+    }
+
+    function copyMarkdown() {
+      if (!currentMarkdown) return;
+      navigator.clipboard.writeText(currentMarkdown);
+      showToast('已复制到剪贴板');
+    }
+
+    function downloadMarkdown() {
+      if (!currentMarkdown) return;
+      const blob = new Blob([currentMarkdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('文件已下载');
+    }
+
+    // Initialize
+    updateUI();
+  </script>
 </body>
 </html>
